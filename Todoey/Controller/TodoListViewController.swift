@@ -10,14 +10,27 @@ import UIKit
 
 class TodoListViewController: UITableViewController {
     
-    var itemArray = ["First", "Second", "Third"]
+    var itemArray = [Item]()
     let defaults = UserDefaults.standard
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        if let items = defaults.array(forKey: "TodoItemArray") as? [String] {
+        let item1 = Item()
+        let item2 = Item()
+        let item3 = Item()
+        
+        item1.title = "Item1"
+        item2.title = "Item2"
+        item3.title = "Item3"
+        
+        itemArray.append(item1)
+        itemArray.append(item2)
+        itemArray.append(item3)
+        
+        if let items = defaults.array(forKey: "TodoItemArray") as? [Item] {
             itemArray = items
         }
+        
         
         // Do any additional setup after loading the view, typically from a nib.
     }
@@ -34,7 +47,9 @@ class TodoListViewController: UITableViewController {
         }
         
         let action = UIAlertAction(title: "Add", style: .default) { (action) in
-            self.itemArray.append(tf.text!)
+            let newItem = Item()
+            newItem.title = tf.text!
+            self.itemArray.append(newItem)
             self.defaults.set(self.itemArray, forKey: "TodoItemArray")
             self.tableView.reloadData()
         }
@@ -45,8 +60,12 @@ class TodoListViewController: UITableViewController {
     //MARK - TableView Datasource Methods
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        
         let cell = tableView.dequeueReusableCell(withIdentifier: "TodoItemCell", for: indexPath)
-        cell.textLabel?.text = itemArray[indexPath.row]
+        let item = itemArray[indexPath.row]
+        cell.textLabel?.text = item.title
+        cell.accessoryType = item.finished ? .checkmark : .none
+       
         return cell
     }
     
@@ -56,13 +75,9 @@ class TodoListViewController: UITableViewController {
 
     //MARK - TabelView Delegate Methods
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        print(itemArray[indexPath.row])
-        let currentCell = tableView.cellForRow(at: indexPath)
-        if currentCell?.accessoryType == .checkmark {
-            currentCell?.accessoryType = .none
-        } else {
-            tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
-        }
+        
+        self.itemArray[indexPath.row].finished = !self.itemArray[indexPath.row].finished
+        tableView.reloadData()
         tableView.deselectRow(at: indexPath, animated: true)
     }
 }
