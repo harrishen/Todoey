@@ -11,7 +11,7 @@ import UIKit
 class TodoListViewController: UITableViewController {
     
     var itemArray = [Item]()
-    let defaults = UserDefaults.standard
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -27,9 +27,7 @@ class TodoListViewController: UITableViewController {
         itemArray.append(item2)
         itemArray.append(item3)
         
-        if let items = defaults.array(forKey: "TodoItemArray") as? [Item] {
-            itemArray = items
-        }
+        loadData()
         
         
         // Do any additional setup after loading the view, typically from a nib.
@@ -50,11 +48,36 @@ class TodoListViewController: UITableViewController {
             let newItem = Item()
             newItem.title = tf.text!
             self.itemArray.append(newItem)
-            self.defaults.set(self.itemArray, forKey: "TodoItemArray")
-            self.tableView.reloadData()
+            
+            self.saveData()
+            
         }
         alert.addAction(action)
         present(alert, animated: true, completion: nil)
+    }
+    
+    func saveData() {
+        let encoder = PropertyListEncoder()
+        do {
+            let data = try encoder.encode(itemArray)
+            try data.write(to: dataFilePath!)
+        } catch {
+            print(error)
+        }
+        
+        self.tableView.reloadData()
+    }
+    
+    func loadData() {
+        if let data = try? Data(contentsOf: dataFilePath!) {
+            let decoder = PropertyListDecoder()
+            do {
+                itemArray = try decoder.decode([Item].self, from: data)
+            }
+            catch {
+                print(error)
+            }
+        }
     }
     
     //MARK - TableView Datasource Methods
@@ -65,6 +88,7 @@ class TodoListViewController: UITableViewController {
         let item = itemArray[indexPath.row]
         cell.textLabel?.text = item.title
         cell.accessoryType = item.finished ? .checkmark : .none
+        
        
         return cell
     }
@@ -77,7 +101,7 @@ class TodoListViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
         self.itemArray[indexPath.row].finished = !self.itemArray[indexPath.row].finished
-        tableView.reloadData()
+        saveData()
         tableView.deselectRow(at: indexPath, animated: true)
     }
 }
